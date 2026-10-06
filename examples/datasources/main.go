@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"mamori.io/client/examples/internal/setup"
+	"mamori.io/mamori-go-client/examples/internal/setup"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module mamori.io/client
+module mamori.io/mamori-go-client
 
 go 1.27.1
 

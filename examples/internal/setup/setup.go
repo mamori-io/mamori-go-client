@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	mamori "mamori.io/client"
+	mamori "mamori.io/mamori-go-client"
 )
 
 // Env returns the server, username and password from MAMORI_SERVER,

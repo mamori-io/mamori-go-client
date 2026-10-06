@@ -5,11 +5,11 @@ server. It is a port of the TypeScript
 [mamori-ent-js-sdk](https://github.com/mamori-io/mamori-ent-js-sdk) (v1.4.9).
 
 ```sh
-go get mamori.io/client
+go get mamori.io/mamori-go-client
 ```
 
 ```go
-import mamori "mamori.io/client"
+import mamori "mamori.io/mamori-go-client"
 
 ctx := context.Background()
 c, err := mamori.New("https://mamori.example.com", mamori.WithInsecureSkipVerify())
