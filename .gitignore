@@ -1,0 +1,30 @@
+# Built example binaries (go build -o bin/ ./examples/...)
+/bin/
+
+# Go build and test output
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.*
+*.coverprofile
+
+# Local workspace files
+go.work
+go.work.sum
+
+# Local environment / credentials
+.env
+.env.*
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+.claude
