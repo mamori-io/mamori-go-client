@@ -63,3 +63,57 @@ func TestSSHLoginDecodeURI(t *testing.T) {
 		t.Fatalf("%+v", l)
 	}
 }
+
+func TestSSHLoginMode(t *testing.T) {
+	c, reqs := newTestClient(t, func(r recordedRequest) any {
+		return []Params{{"status": "ok"}}
+	})
+	ctx := context.Background()
+	for _, tc := range []struct {
+		mode          SSHLoginMode
+		key, password string
+		want          string
+	}{
+		{"", "k", "pw", "CALL ADD_SSH_LOGIN('n', 'ssh://u@h', 'k', 'pw','', '30')"},
+		{SSHLoginModeKey, "k", "", "CALL ADD_SSH_LOGIN('n', 'ssh://u@h', 'k', '','', '30')"},
+		{SSHLoginModeCredentials, "k", "pw", "CALL ADD_SSH_LOGIN('n', 'ssh://u@h', null, 'pw','', '30')"},
+		{SSHLoginModePrompt, "", "", "CALL ADD_SSH_LOGIN('n', 'ssh://u@h', null, '','', '30')"},
+	} {
+		l := NewSSHLogin("n")
+		l.Host, l.User, l.PrivateKeyName, l.Password, l.LoginMode = "h", "u", tc.key, tc.password, tc.mode
+		if _, err := c.SSHLogins.Create(ctx, l); err != nil {
+			t.Fatalf("mode %q: %v", tc.mode, err)
+		}
+		if got := (*reqs)[len(*reqs)-1].Body["sql"]; got != tc.want {
+			t.Errorf("mode %q: sql = %v\nwant  %v", tc.mode, got, tc.want)
+		}
+	}
+
+	n := len(*reqs)
+	for _, l := range []*SSHLogin{
+		{Name: "n", Host: "h", LoginMode: SSHLoginModeKey, Password: "pw"},
+		{Name: "n", Host: "h", LoginMode: SSHLoginModeCredentials, PrivateKeyName: "k"},
+		{Name: "n", Host: "h", LoginMode: SSHLoginModePrompt, Password: "pw"},
+		{Name: "n", Host: "h", LoginMode: SSHLoginModePrompt, PrivateKeyName: "k"},
+		{Name: "n", Host: "h", LoginMode: "bogus"},
+	} {
+		if _, err := c.SSHLogins.Create(ctx, l); err == nil {
+			t.Errorf("Create(%+v) succeeded", l)
+		}
+		l.ID = "1"
+		if _, err := c.SSHLogins.Update(ctx, l); err == nil {
+			t.Errorf("Update(%+v) succeeded", l)
+		}
+	}
+	if len(*reqs) != n {
+		t.Fatalf("invalid logins sent %d requests", len(*reqs)-n)
+	}
+
+	var l SSHLogin
+	if err := json.Unmarshal([]byte(`{"name":"n","uri":"ssh://h","login_mode":"mamori"}`), &l); err != nil {
+		t.Fatal(err)
+	}
+	if l.LoginMode != SSHLoginModePrompt {
+		t.Fatalf("login mode = %q", l.LoginMode)
+	}
+}
