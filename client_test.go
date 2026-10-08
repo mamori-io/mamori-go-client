@@ -88,6 +88,21 @@ func TestLoginAndCall(t *testing.T) {
 	}
 }
 
+func TestCSRFToken(t *testing.T) {
+	for _, page := range []string{
+		`<meta name="csrf-token" content="tok123">`,
+		`<meta content="tok123" name="csrf-token">`,
+		"<head>\n<meta charset=\"utf-8\">\n<meta content=\"tok123\" name=\"csrf-token\">\n<title>x</title>",
+	} {
+		if got := csrfToken([]byte(page)); got != "tok123" {
+			t.Errorf("csrfToken(%q) = %q", page, got)
+		}
+	}
+	if got := csrfToken([]byte(`<meta content="x" name="other"><meta name="csrf-token">`)); got != "" {
+		t.Errorf("csrfToken without content = %q", got)
+	}
+}
+
 func TestAPIError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `{"message":"nope"}`, http.StatusForbidden)

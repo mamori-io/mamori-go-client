@@ -355,7 +355,24 @@ func WithApplication(app string) LoginOption {
 	return func(r *loginRequest) { r.Application = app }
 }
 
-var csrfRe = regexp.MustCompile(`<meta[^>]*csrf-token[^>]*content="([^"]*)"`)
+var (
+	csrfMetaRe    = regexp.MustCompile(`<meta[^>]*csrf-token[^>]*>`)
+	csrfContentRe = regexp.MustCompile(`content="([^"]*)"`)
+)
+
+// csrfToken returns the content of the csrf-token meta tag in an HTML page.
+// Attribute order varies between server versions, so the tag is found first
+// and its content attribute extracted from it.
+func csrfToken(page []byte) string {
+	tag := csrfMetaRe.Find(page)
+	if tag == nil {
+		return ""
+	}
+	if m := csrfContentRe.FindSubmatch(tag); m != nil {
+		return string(m[1])
+	}
+	return ""
+}
 
 // Login authenticates with the server and establishes a session.
 func (c *Client) Login(ctx context.Context, username, password string, opts ...LoginOption) (*LoginResponse, error) {
@@ -364,10 +381,7 @@ func (c *Client) Login(ctx context.Context, username, password string, opts ...L
 	if err != nil {
 		return nil, err
 	}
-	csrf := ""
-	if m := csrfRe.FindSubmatch(root); m != nil {
-		csrf = string(m[1])
-	}
+	csrf := csrfToken(root)
 	c.mu.Lock()
 	c.csrf = csrf
 	c.mu.Unlock()
